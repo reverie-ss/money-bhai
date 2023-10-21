@@ -1,6 +1,7 @@
 import pymongo
 import os
 import requests
+import time
 from datetime import datetime, timedelta
 from src.models.data_model_candle import Candle
 
@@ -8,7 +9,7 @@ from src.models.data_model_candle import Candle
 
 class CandleScrapper:
 
-    def __init__(self, instrument_key: str) -> None:
+    def __init__(self, instrument_key: str = None) -> None:
         client = pymongo.MongoClient(os.environ.get("MONGO_URL"))
         database = client.get_database(os.environ.get("DATABASE"))
         self.candles_collection = database.get_collection("MinuteCandles")
@@ -31,7 +32,9 @@ class CandleScrapper:
         # Print the document
         return len(res.inserted_ids)
     
-    def serialize_candle_data(self, historical_data: list) -> list[Candle]:
+    def serialize_candle_data(self, historical_data: dict) -> list[Candle]:
+
+        print(historical_data)
         # Serialize data
         candles_list = []
         for candle in historical_data.get("candles"):
@@ -68,7 +71,7 @@ class CandleScrapper:
 
         return historical_data
 
-    def fetch_historical_data_multiple_days(self, from_date: str, to_date: str, instrument: str = "NSE_INDEX|Nifty 50"):
+    def fetch_historical_data_multiple_days(self):
         """
         Upstox has the following rate limit:
 
@@ -81,7 +84,7 @@ class CandleScrapper:
         Sample Format: 2023-10-17
         """
 
-        start_date = datetime(
+        history_date = datetime(
             year=2023,
             month=1,
             day=1
@@ -89,20 +92,31 @@ class CandleScrapper:
         end_date = datetime.now() - timedelta(days=1)
 
         for index in range(300):
-            if start_date<end_date:
+            history_date = history_date + timedelta(days=1)
+            print(f"Checking for date {history_date} {history_date.weekday()}")
+            if history_date<end_date:
+                
+                if history_date.weekday() > 4:
+                    continue
 
-                date = start_date.strftime("YYYY-mm-dd")
+                date = history_date.strftime("%Y-%m-%d")
                 historical_data = self.fetch_historical_data(date=date)
 
                 # Serialize data and sort it
                 sorted_historical_data: list[Candle] = self.serialize_candle_data(historical_data=historical_data)
 
-                # Insert into database
-                inserted_count = self.insert_into_database(sorted_candles=sorted_historical_data)
+                if len(sorted_historical_data) != 0: # Day is holiday if no result returned
 
-                print(f"Historical data for {date} inserted with {inserted_count} documents")
+                    # Insert into database
+                    inserted_count = self.insert_into_database(sorted_candles=sorted_historical_data)
+
+                    print(f"Historical data for {date} inserted with {inserted_count} documents")
             
-            start_date = start_date + timedelta(days=1)
+            time.sleep(1) # To avoid rate limit
+        
+        print("Successfully completed scraping")
+
+        return True
 
     
     def clear_database(self):
@@ -112,3 +126,4 @@ class CandleScrapper:
 
         res = self.candles_collection.delete_many({})
         print(res.deleted_count)
+
