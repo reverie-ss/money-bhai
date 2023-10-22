@@ -2,7 +2,7 @@
 
 
 from src.scrapper.script import CandleScrapper
+from src.utilities.enums import InstrumentKey
 
 
-# res = CandleScrapper().fetch_historical_data_multiple_days()
-# print(res)
+res = CandleScrapper(instrument_key=InstrumentKey.NIFTY_50.value).fetch_historical_data_multiple_days()

@@ -2,21 +2,22 @@ import pymongo
 import os
 import requests
 import time
+from dateutil import parser
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 from src.models.data_model_candle import Candle
 
+load_dotenv()
 
 
 class CandleScrapper:
 
-    def __init__(self, instrument_key: str = None) -> None:
+    def __init__(self, instrument_key: str) -> None:
         client = pymongo.MongoClient(os.environ.get("MONGO_URL"))
         database = client.get_database(os.environ.get("DATABASE"))
         self.candles_collection = database.get_collection("MinuteCandles")
 
-        self.instrument_key = "NSE_INDEX|Nifty 50"
-        if instrument_key:
-            self.instrument_key = instrument_key
+        self.instrument_key = instrument_key
 
     def insert_into_database(self, sorted_candles: list[Candle]) -> int:
         # Insert into mongo database
@@ -28,7 +29,7 @@ class CandleScrapper:
 
         # Insert the document into the collection
         res = self.candles_collection.insert_many(dict_sorted_candles)
-
+        timedelta(hours=5, minutes=30)
         # Print the document
         return len(res.inserted_ids)
     
@@ -40,7 +41,7 @@ class CandleScrapper:
         for candle in historical_data.get("candles"):
             temp = {
                 "meta" : self.instrument_key,
-                "ts" : datetime.fromisoformat(candle[0]),
+                "ts" : parser.parse(candle[0]).replace(tzinfo=None),
                 "open" : candle[1],
                 "high" : candle[2],
                 "low" : candle[3],
@@ -69,7 +70,12 @@ class CandleScrapper:
         response = requests.get(api_url, headers=headers)
         historical_data = response.json().get("data")
 
-        return historical_data
+        if response.status_code == 200:
+            return historical_data
+        else:
+            print("Upstox API failed", api_url)
+            print(response)
+            exit(0)
 
     def fetch_historical_data_multiple_days(self):
         """
@@ -86,36 +92,36 @@ class CandleScrapper:
 
         history_date = datetime(
             year=2023,
-            month=1,
-            day=1
+            month=4,
+            day=15
         )
         end_date = datetime.now() - timedelta(days=1)
 
-        for index in range(300):
+        while history_date<end_date:
             history_date = history_date + timedelta(days=1)
             print(f"Checking for date {history_date} {history_date.weekday()}")
-            if history_date<end_date:
                 
-                if history_date.weekday() > 4:
-                    continue
+                # Excluding weekends
+            if history_date.weekday() > 4:
+                continue
 
-                date = history_date.strftime("%Y-%m-%d")
-                historical_data = self.fetch_historical_data(date=date)
+            date = history_date.strftime("%Y-%m-%d")
+            historical_data = self.fetch_historical_data(date=date)
 
-                # Serialize data and sort it
-                sorted_historical_data: list[Candle] = self.serialize_candle_data(historical_data=historical_data)
+            # Serialize data and sort it
+            sorted_historical_data: list[Candle] = self.serialize_candle_data(historical_data=historical_data)
 
-                if len(sorted_historical_data) != 0: # Day is holiday if no result returned
+            if len(sorted_historical_data) != 0: # Day is holiday if no result returned
 
-                    # Insert into database
-                    inserted_count = self.insert_into_database(sorted_candles=sorted_historical_data)
+                # Insert into database
+                inserted_count = self.insert_into_database(sorted_candles=sorted_historical_data)
 
-                    print(f"Historical data for {date} inserted with {inserted_count} documents")
+                print(f"Historical data for {date} inserted with {inserted_count} documents")
             
             time.sleep(1) # To avoid rate limit
+            
         
         print("Successfully completed scraping")
-
         return True
 
     
