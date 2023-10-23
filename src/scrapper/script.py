@@ -77,7 +77,7 @@ class CandleScrapper:
             print(response)
             exit(0)
 
-    def fetch_historical_data_multiple_days(self):
+    def fetch_historical_data_multiple_days(self, start_date: datetime = None):
         """
         Upstox has the following rate limit:
 
@@ -90,22 +90,27 @@ class CandleScrapper:
         Sample Format: 2023-10-17
         """
 
-        history_date = datetime(
+        # Set the upstox start date
+        default_start_date = datetime(
             year=2023,
             month=4,
             day=15
         )
+
+        if start_date is None:
+            start_date = default_start_date
+
         end_date = datetime.now() - timedelta(days=1)
 
-        while history_date<end_date:
-            history_date = history_date + timedelta(days=1)
-            print(f"Checking for date {history_date} {history_date.weekday()}")
+        while start_date<end_date:
+            start_date = start_date + timedelta(days=1)
+            print(f"Checking for date {start_date} {start_date.weekday()}")
                 
                 # Excluding weekends
-            if history_date.weekday() > 4:
+            if start_date.weekday() > 4:
                 continue
 
-            date = history_date.strftime("%Y-%m-%d")
+            date = start_date.strftime("%Y-%m-%d")
             historical_data = self.fetch_historical_data(date=date)
 
             # Serialize data and sort it
@@ -123,6 +128,20 @@ class CandleScrapper:
         
         print("Successfully completed scraping")
         return True
+
+    def fetch_missing_historical_data(self):
+        """
+        This function will check the last date entry in database for the given instrument. It will then continue from that day.
+        """
+        res = list(self.candles_collection.find({"meta": self.instrument_key}).sort("_id", -1).limit(1))
+        if len(res) == 0:
+            print("Database is empty")
+            return
+        
+        last_inserted_candle: Candle = Candle(**res[0])
+
+        self.fetch_historical_data_multiple_days(start_date=last_inserted_candle.ts)
+
 
     
     def clear_database(self):
