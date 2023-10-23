@@ -6,6 +6,7 @@ from dateutil import parser
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from src.models.data_model_candle import Candle
+from src.utilities.enums import InstrumentKey
 
 load_dotenv()
 
@@ -35,7 +36,7 @@ class CandleScrapper:
     
     def serialize_candle_data(self, historical_data: dict) -> list[Candle]:
 
-        print(historical_data)
+        print("Total data fetched: ", len(historical_data.get("candles")))
         # Serialize data
         candles_list = []
         for candle in historical_data.get("candles"):
@@ -55,7 +56,7 @@ class CandleScrapper:
         return sorted_candles
 
 
-    def fetch_historical_data(self, date: str):
+    def fetch_upstox_date(self, date: str):
         """
         Fetches data for a single day
         Args:
@@ -74,10 +75,10 @@ class CandleScrapper:
             return historical_data
         else:
             print("Upstox API failed", api_url)
-            print(response)
+            print(response.status_code, response.text)
             exit(0)
 
-    def fetch_historical_data_multiple_days(self, start_date: datetime = None):
+    def fetch_historical_data(self, start_date: datetime = None, end_date: datetime = None):
         """
         Upstox has the following rate limit:
 
@@ -96,11 +97,13 @@ class CandleScrapper:
             month=4,
             day=15
         )
+        default_end_date = datetime.now() - timedelta(days=1)
 
         if start_date is None:
             start_date = default_start_date
 
-        end_date = datetime.now() - timedelta(days=1)
+        if end_date is None:
+            end_date = default_end_date
 
         while start_date<end_date:
             start_date = start_date + timedelta(days=1)
@@ -111,7 +114,7 @@ class CandleScrapper:
                 continue
 
             date = start_date.strftime("%Y-%m-%d")
-            historical_data = self.fetch_historical_data(date=date)
+            historical_data = self.fetch_upstox_date(date=date)
 
             # Serialize data and sort it
             sorted_historical_data: list[Candle] = self.serialize_candle_data(historical_data=historical_data)
@@ -140,7 +143,7 @@ class CandleScrapper:
         
         last_inserted_candle: Candle = Candle(**res[0])
 
-        self.fetch_historical_data_multiple_days(start_date=last_inserted_candle.ts)
+        self.fetch_historical_data(start_date=last_inserted_candle.ts)
 
 
     
@@ -149,6 +152,6 @@ class CandleScrapper:
         Dangerous function. Use only when necessary
         """
 
-        res = self.candles_collection.delete_many({})
+        res = self.candles_collection.delete_many({"meta": InstrumentKey.NIFTY23N0219600CE.value})
         print(res.deleted_count)
 
