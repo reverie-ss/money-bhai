@@ -1,2 +1,4 @@
 [MESSAGES CONTROL]
 disable=broad-exception-caught
+[FORMAT]
+max-line-length=240
