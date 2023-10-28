@@ -2,3 +2,4 @@ pymongo
 python-dotenv
 matplotlib
 mplfinance
+pandas
