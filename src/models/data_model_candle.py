@@ -1,7 +1,13 @@
+"""
+This module has the datamodels required for this project
+"""
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel # pylint: disable=no-name-in-module
 
 class Candle(BaseModel):
+    """
+    Data model for the candle fetched from Upstox. This is also the schema for Candles collection
+    """
     ts: datetime
     meta: str
     open: float
@@ -12,6 +18,9 @@ class Candle(BaseModel):
 
 
 class Instruments(BaseModel):
+    """
+    Data Model for the instruments fetched from Upstox.  This is also the schema for instruments collection
+    """
     instrument_key: str
     exchange_token: float
     tradingsymbol: str
