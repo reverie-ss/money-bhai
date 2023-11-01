@@ -23,15 +23,15 @@ class Instruments(BaseModel):
     """
     instrument_key: str
     exchange_token: float
-    tradingsymbol: str
     name: str
     last_price: float
-    expiry: str
-    strike: float
-    tick_size: float
-    lot_size: float
     instrument_type: str
-    option_type: str
     exchange: str
+    expiry: str
+    option_type: str = None
+    strike: float = None
+    tick_size: float = None
+    lot_size: float = None
+    trading_symbol: str = None
     created_at: datetime = datetime.now()
     
