@@ -8,7 +8,9 @@ import pymongo
 import requests
 import pandas as pd
 from dotenv import load_dotenv
+from pymongo.errors import BulkWriteError
 from src.models.data_model_candle import Instruments
+from src.utilities.script import convert_model_to_dict
 
 load_dotenv()
 
@@ -42,8 +44,9 @@ class InstrumentsScrapper:
                     decompressed_content = gzip.decompress(response.content)
                     local_csv_file.write(decompressed_content)
 
-
-                return pd.read_csv(self.local_csv_file_path)
+                df = pd.read_csv(self.local_csv_file_path)
+                os.remove(self.local_csv_file_path)
+                return df
             else:
                 print(f"Failed to download the PDF. Status code: {response.status_code}")
 
@@ -57,16 +60,14 @@ class InstrumentsScrapper:
         The instruments file has a lot of data, we just need to filter out the premiums of nifty and  banknifty
         """
 
-        valid_instrument_type = ["INDEX", "OPTIDX"]
-        valid_exchange = ["NSE_INDEX", "NSE_FO"]
+        valid_instrument_type = "OPTIDX"
         valid_index = ["NSE_INDEX|Nifty 50", "NSE_INDEX|Nifty Bank"]
 
         valid_instruments_list: list[Instruments] = []
         for index, row in instruments_df.iterrows(): # pylint: disable=unused-variable
             instrument: Instruments = Instruments(**row)
-            if instrument.instrument_type in valid_instrument_type and \
-                instrument.exchange in valid_exchange and \
-                (instrument.tradingsymbol.startswith("NIFTY") or instrument.tradingsymbol.startswith("BANKNIFTY")):
+            if instrument.instrument_type == valid_instrument_type and \
+                (instrument.trading_symbol.startswith("NIFTY") or instrument.trading_symbol.startswith("BANKNIFTY")):
                 valid_instruments_list.append(instrument)
 
             if instrument.instrument_key in valid_index:
@@ -86,14 +87,25 @@ class InstrumentsScrapper:
         """
         instruments_df = self.fetch_instruments()
 
-        if instruments_df:
+        if instruments_df is not None:
             valid_instruments_list: list[Instruments] = self.filter_instruments(instruments_df=instruments_df)
 
-            # Update/Insert the instruments into the database 
-            db_res = self.instruments_collection.insert_many(valid_instruments_list, ordered=False)
+            # Convert the data model into dict so that it can be inserted into database
+            valid_instruments_list = convert_model_to_dict(list_data_raw=valid_instruments_list)
+
+            # Update/Insert the instruments into the database
+            inserted_count: int = 0
+            try:
+                db_res = self.instruments_collection.insert_many(valid_instruments_list, ordered=False)
+                inserted_count = len(db_res.inserted_ids)
+            except Exception as exc:
+                if isinstance(exc, BulkWriteError):
+                    print(f"Skipping {len(exc.details.get('writeErrors'))} instruments as these are duplicate")
+                    inserted_count = exc.details.get('nInserted')
+
             print("Successfuly completed scraping and storing instruments")
             print(f"Fetched instruments: {len(valid_instruments_list)}")
-            print(f"Inserted instruments: {len(db_res.inserted_ids)}")
-            print(f"Ignored instruments: {len(valid_instruments_list) - len(db_res.inserted_ids)}")
+            print(f"Inserted instruments: {inserted_count}")
+            print(f"Ignored instruments: {len(valid_instruments_list) - inserted_count}")
         else:
             print("Failed to fetch instruments from upstox")
