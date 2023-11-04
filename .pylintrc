@@ -2,3 +2,5 @@
 disable=broad-exception-caught
 [FORMAT]
 max-line-length=240
+[MASTER]
+fail-under = 9
