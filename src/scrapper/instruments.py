@@ -1,19 +1,22 @@
-import pandas as pd
-import pymongo
+"""
+This module is used to fetch instruments data from upstox and store it in the database.
+Instruments have information about each premium or index. These ids are required to fetch price or place order
+"""
 import gzip
 import os
+import pymongo
 import requests
-from typing import Dict
-from dateutil import parser
-from datetime import datetime, timedelta
+import pandas as pd
 from dotenv import load_dotenv
-from src.models.data_model_candle import Candle, Instruments
-from src.utilities.enums import InstrumentKey
+from src.models.data_model_candle import Instruments
 
 load_dotenv()
 
 
 class InstrumentsScrapper:
+    """
+    Class that has all the functionalities to fetch, filter and store data
+    """
 
     def __init__(self) -> None:
         client = pymongo.MongoClient(os.environ.get("MONGO_URL"))
@@ -59,7 +62,7 @@ class InstrumentsScrapper:
         valid_index = ["NSE_INDEX|Nifty 50", "NSE_INDEX|Nifty Bank"]
 
         valid_instruments_list: list[Instruments] = []
-        for index, row in instruments_df.iterrows():
+        for index, row in instruments_df.iterrows(): # pylint: disable=unused-variable
             instrument: Instruments = Instruments(**row)
             if instrument.instrument_type in valid_instrument_type and \
                 instrument.exchange in valid_exchange and \
