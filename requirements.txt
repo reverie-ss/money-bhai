@@ -4,3 +4,5 @@ matplotlib
 mplfinance
 pandas
 pylint
+pydantic
+requests
