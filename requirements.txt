@@ -3,3 +3,4 @@ python-dotenv
 matplotlib
 mplfinance
 pandas
+pylint
