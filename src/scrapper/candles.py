@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 from src.models.data_model_candle import Candle
 from src.utilities.enums import InstrumentKey
+from src.utilities.singleton import database_client
 
 load_dotenv()
 
@@ -22,9 +23,7 @@ class CandleScrapper:
     """
 
     def __init__(self, instrument_key: str) -> None:
-        client = pymongo.MongoClient(os.environ.get("MONGO_URL"))
-        database = client.get_database(os.environ.get("DATABASE"))
-        self.candles_collection = database.get_collection("MinuteCandles")
+        self.candles_collection = database_client.get_collection("MinuteCandles")
 
         self.instrument_key = instrument_key
 
@@ -78,7 +77,7 @@ class CandleScrapper:
         """
 
         headers = {
-            "Api-Version": "2.0"
+            "Api-Version": "2.0",
         }
         api_url =  f"https://api-v2.upstox.com/historical-candle/{self.instrument_key}/1minute/{date}/{date}"
         response = requests.get(api_url, headers=headers, timeout=60)
@@ -157,10 +156,41 @@ class CandleScrapper:
 
         self.fetch_historical_data(start_date=last_inserted_candle.ts)
 
-    def clear_database(self):
+class UpstoxAuthorization:
+    """
+    To generate the code out of login to upstox, follow the given url
+    https://api-v2.upstox.com/login/authorization/dialog?response_type=code&client_id=<CLIENT_ID>&redirect_uri=https://github.com/reverie-ss/
+    Next login into your account and get the authorization code appended to redirect url
+    """
+    def __init__(self) -> None:
+        pass
+
+    def generate_access_token(self, code: str):
         """
-        Dangerous function. Use only when necessary
+        The authorization code can be used only once. You have to generate it again to get new access token
         """
 
-        res = self.candles_collection.delete_many({"meta": InstrumentKey.NIFTY23N0219600CE.value})
-        print(res.deleted_count)
+        # Define the API endpoint URL
+        url = 'https://api-v2.upstox.com/login/authorization/token'
+
+        # Define the headers
+        headers = {
+            'accept': 'application/json',
+            'Api-Version': '2.0',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+
+        # Define the data (request parameters)
+        data = {
+            'code': code,
+            'client_id': os.environ.get("CLIENT_ID"),
+            'client_secret': os.environ.get("CLIENT_SECRET"),
+            'redirect_uri': os.environ.get("REDIRECT_URI"),
+            'grant_type': 'authorization_code',
+        }
+
+        # Send a POST request to the API
+        response = requests.post(url, headers=headers, data=data)
+
+        # Print the response
+        print(response.text)
