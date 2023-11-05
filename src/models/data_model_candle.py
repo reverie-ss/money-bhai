@@ -35,3 +35,16 @@ class Instruments(BaseModel):
     trading_symbol: str = None
     created_at: datetime = datetime.now()
     
+class Order(BaseModel):
+    """
+    Data model created ion accordance with orders placed on Kite
+    """
+    trading_symbol: str
+    trade_date: str
+    trade_type: str
+    quantity: int
+    price: float
+    trade_id: int
+    order_id: int
+    order_execution_time: datetime
+    expiry_date: str
