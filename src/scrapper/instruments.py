@@ -107,5 +107,7 @@ class InstrumentsScrapper:
             print(f"Fetched instruments: {len(valid_instruments_list)}")
             print(f"Inserted instruments: {inserted_count}")
             print(f"Ignored instruments: {len(valid_instruments_list) - inserted_count}")
+            return "Successful", 200
         else:
             print("Failed to fetch instruments from upstox")
+            return "Failed", 400

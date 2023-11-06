@@ -2,7 +2,7 @@ from src.scrapper.instruments import InstrumentsScrapper
 # from datetime import datetime
 from src.scrapper.candles import CandleScrapper
 from src.order.exit import ExitService
-from src.scrapper.premium import PremiumScrapper
+from src.scrapper.tradebook import PremiumScrapper
 
 
 # CandleScrapper(instrument_key="NSE_FO|40742").fetch_historical_data(
@@ -26,9 +26,13 @@ from fastapi import FastAPI
 app = FastAPI()
 
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
+@app.get("/scrapper/instruments")
+def scrap_instruments():
+    """
+    Route used to scrap all the instruments and store in database
+    """
+    response = InstrumentsScrapper().scrap_and_store_instruments()
+    return response
 
 
 @app.get("/items/{item_id}")
