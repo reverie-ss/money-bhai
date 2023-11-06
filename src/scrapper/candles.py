@@ -78,14 +78,8 @@ class CandleScrapper:
         }
         api_url =  f"https://api-v2.upstox.com/historical-candle/{self.instrument_key}/1minute/{date}/{date}"
         response = requests.get(api_url, headers=headers, timeout=60)
-        historical_data = response.json().get("data")
 
-        if response.status_code == 200:
-            return historical_data
-        else:
-            print("Upstox API failed", api_url)
-            print(response.status_code, response.text)
-            exit(0)
+        return response
 
     def fetch_historical_data(self, start_date: datetime = None, end_date: datetime = None):
         """
@@ -123,7 +117,14 @@ class CandleScrapper:
                 continue
 
             date = start_date.strftime("%Y-%m-%d")
-            historical_data = self.fetch_upstox_date(date=date)
+            upstox_response = self.fetch_upstox_date(date=date)
+
+            if upstox_response.status_code != 200:
+                print("Upstox API failed")
+                print(upstox_response.status_code, upstox_response.text)
+                return upstox_response
+
+            historical_data = upstox_response.json().get("data")
 
             # Serialize data and sort it
             sorted_historical_data: list[Candle] = self.serialize_candle_data(historical_data=historical_data)

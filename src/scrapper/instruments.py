@@ -47,8 +47,8 @@ class InstrumentsScrapper:
                 df = pd.read_csv(self.local_csv_file_path)
                 os.remove(self.local_csv_file_path)
                 return df
-            else:
-                print(f"Failed to download the PDF. Status code: {response.status_code}")
+
+            print(f"Failed to download the PDF. Status code: {response.status_code}")
 
         except Exception as exc:
             print(exc)
@@ -107,6 +107,6 @@ class InstrumentsScrapper:
             print(f"Inserted instruments: {inserted_count}")
             print(f"Ignored instruments: {len(valid_instruments_list) - inserted_count}")
             return "Successful", 200
-        else:
-            print("Failed to fetch instruments from upstox")
-            return "Failed", 400
+        
+        print("Failed to fetch instruments from upstox")
+        return "Failed", 400

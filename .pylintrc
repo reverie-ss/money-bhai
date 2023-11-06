@@ -1,5 +1,5 @@
 [MESSAGES CONTROL]
-disable=broad-exception-caught, missing-timeout, missing-final-newline, trailing-whitespace, superfluous-parens
+disable=broad-exception-caught, missing-timeout, missing-final-newline, trailing-whitespace, superfluous-parens, too-few-public-methods
 [FORMAT]
 max-line-length=240
 [MASTER]
