@@ -138,18 +138,20 @@ class CandleScrapper:
 
             time.sleep(1) # To avoid rate limit
 
-        print("Successfully completed scraping")
-        return True
+        return "Successfully completed scraping", 200
 
     def fetch_missing_historical_data(self):
         """
         This function will check the last date entry in database for the given instrument. It will then continue from that day.
         """
         res = list(self.candles_collection.find({"meta": self.instrument_key}).sort("_id", -1).limit(1))
-        if len(res) == 0:
-            print("Database is empty")
-            return
 
-        last_inserted_candle: Candle = Candle(**res[0])
+        # Fetch from start if no data exists
+        start_date: datetime = datetime.now() - timedelta(days=35)
 
-        self.fetch_historical_data(start_date=last_inserted_candle.ts)
+        # Check if data already exists
+        if len(res) is not 0:
+            last_inserted_candle: Candle = Candle(**res[0])
+            start_date = last_inserted_candle.ts
+
+        return self.fetch_historical_data(start_date=start_date)

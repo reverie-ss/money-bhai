@@ -35,13 +35,7 @@ def scrap_candles(instrument_key: str):
     """
     Route used to scrap all the instruments and store in database
     """
-    response = CandleScrapper(instrument_key=instrument_key).fetch_historical_data(
-        start_date=datetime(
-            year=2023,
-            month=10,
-            day=1
-        )
-    )
+    response = CandleScrapper(instrument_key=instrument_key).fetch_missing_historical_data()
     return response
 
 @app.get("/trade/exit/{instrument_key}")
