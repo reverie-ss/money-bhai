@@ -5,12 +5,14 @@ from datetime import datetime
 import json
 import time
 import requests
-from src.models.data_model_candle import Candle
 from src.utilities.script import generate_header
 from src.utilities.singleton import database_client
 
 
 class ExitService:
+    """
+    Has logic to tell when to exit
+    """
 
     def __init__(self, instrument_key) -> None:
         self.candles_collection = database_client.get_collection("MinuteCandles")
