@@ -66,8 +66,7 @@ class InstrumentsScrapper:
         valid_instruments_list: list[Instruments] = []
         for index, row in instruments_df.iterrows(): # pylint: disable=unused-variable
             instrument: Instruments = Instruments(**row)
-            if instrument.instrument_type == valid_instrument_type and \
-                (instrument.trading_symbol.startswith("NIFTY") or instrument.trading_symbol.startswith("BANKNIFTY")):
+            if instrument.instrument_type == valid_instrument_type:
                 valid_instruments_list.append(instrument)
 
             if instrument.instrument_key in valid_index:
