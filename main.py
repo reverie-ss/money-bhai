@@ -2,7 +2,7 @@ from src.scrapper.instruments import InstrumentsScrapper
 # from datetime import datetime
 from src.scrapper.candles import CandleScrapper
 from src.order.exit import ExitService
-from src.scrapper.tradebook import PremiumScrapper
+from src.scrapper.tradebook import PremiumScrapper, TradebookScrapper
 
 
 # CandleScrapper(instrument_key="NSE_FO|40742").fetch_historical_data(
@@ -35,6 +35,10 @@ def scrap_instruments():
     return response
 
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+@app.get("/scrapper/tradebook")
+def scrap_tradebook():
+    """
+    Route used to scrap all the instruments and store in database
+    """
+    response = TradebookScrapper().fill_tradebook_from_zerodha()
+    return response
