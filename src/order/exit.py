@@ -78,8 +78,6 @@ class ExitService:
                     trailing_target = trailing_target + trailing_variation
             counter = counter + 1
             time.sleep(1.8)
-            if counter == 100:
-                break
 
         total_time = total_time + (datetime.now() - current_time).seconds
         print("Average Time:" + str(total_time/counter))
@@ -98,9 +96,7 @@ class ExitService:
         """
 
         self.track_premium(
-            instrument_key="NSE_FO|40742",
+            instrument_key="NSE_FO|40741",
             stop_loss_percent=10,
-            trailing_percent=10
+            trailing_percent=5
         )
-
-
