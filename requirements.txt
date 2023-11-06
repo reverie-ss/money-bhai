@@ -6,3 +6,5 @@ pandas
 pylint
 pydantic
 requests
+fastapi
+uvicorn[standard]
