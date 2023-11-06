@@ -12,11 +12,12 @@ from src.utilities.singleton import database_client
 
 class ExitService:
 
-    def __init__(self) -> None:
+    def __init__(self, instrument_key) -> None:
         self.candles_collection = database_client.get_collection("MinuteCandles")
+        self.instrument_key = instrument_key
 
 
-    def fetch_latest_price(self, instrument_key: str):
+    def fetch_latest_price(self):
         """
         Fetches the latest candle details from upstox api for one or more instruments
         
@@ -31,16 +32,16 @@ class ExitService:
         # query_instruments = query_instruments[:-1]
 
         headers = generate_header(is_authorization_required=True)
-        api_url =  f"https://api-v2.upstox.com/market-quote/quotes?symbol={instrument_key}"
+        api_url =  f"https://api-v2.upstox.com/market-quote/quotes?symbol={self.instrument_key}"
         response = requests.get(api_url, headers=headers, timeout=60)
         print(response.text)
         if response.status_code == 200:
             result_dict = (json.loads(response.content)).get("data")
-            for instrument_key in result_dict:
-                return result_dict.get(instrument_key).get("last_price")
+            for key_of_instrument in result_dict:
+                return result_dict.get(key_of_instrument).get("last_price")
         return None
     
-    def track_premium(self, instrument_key: str, stop_loss_percent: float, trailing_percent: float):
+    def track_premium(self, stop_loss_percent: float, trailing_percent: float):
         """
         Tracks the instrument every second to check if exit conditions are met.
         """
@@ -52,7 +53,7 @@ class ExitService:
         counter = 0
         current_time = datetime.now()
         while True:
-            last_price = self.fetch_latest_price(instrument_key=instrument_key)
+            last_price = self.fetch_latest_price()
             
             if last_price:
 
@@ -82,11 +83,11 @@ class ExitService:
         total_time = total_time + (datetime.now() - current_time).seconds
         print("Average Time:" + str(total_time/counter))
         
-        # while True:
-        #     print(f"EXIT @{last_price} (stop_loss={stop_loss} and trailing_target={trailing_target})")
+        while True:
+            print(f"EXIT @{last_price} (stop_loss={stop_loss} and trailing_target={trailing_target})")
 
     
-    def execute(self):
+    def start_trailing(self):
         """
         Intitates the process of exiting a position. 
         Here are the following steps:
@@ -96,7 +97,6 @@ class ExitService:
         """
 
         self.track_premium(
-            instrument_key="NSE_FO|40741",
             stop_loss_percent=10,
             trailing_percent=5
         )
