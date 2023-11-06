@@ -1,17 +1,14 @@
 """
 Candle Scrapper is used to fetch all the prices by minute level and store in database
 """
-import os
 import time
 from datetime import datetime, timedelta
 from dateutil import parser
 
 import requests
-import pymongo
 from dotenv import load_dotenv
 
 from src.models.data_model_candle import Candle
-from src.utilities.enums import InstrumentKey
 from src.utilities.singleton import database_client
 
 load_dotenv()
