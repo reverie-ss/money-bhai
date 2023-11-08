@@ -28,3 +28,11 @@ def generate_header(is_authorization_required: bool = False):
         header["Authorization"] = "Bearer " + os.environ.get("ACCESS_TOKEN")
     
     return header
+
+def base_url():
+    """
+    Returns the base url of upstox
+    """
+    return os.environ.get("UPSTOX_BASE_URL")
+
+# def execute_api(method: str = "GET", ):

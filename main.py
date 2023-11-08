@@ -2,7 +2,6 @@
 Main module. This is where it all starts.
 TODO: Move the routes to it's respective modules
 """
-from datetime import datetime
 from fastapi import FastAPI
 from src.scrapper.candles import CandleScrapper
 from src.order.exit import ExitService

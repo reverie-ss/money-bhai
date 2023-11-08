@@ -5,7 +5,7 @@ from datetime import datetime
 import json
 import time
 import requests
-from src.utilities.script import generate_header
+from src.utilities.script import generate_header, base_url
 from src.utilities.singleton import database_client
 
 
@@ -17,6 +17,54 @@ class ExitService:
     def __init__(self, instrument_key) -> None:
         self.candles_collection = database_client.get_collection("MinuteCandles")
         self.instrument_key = instrument_key
+
+    def fetch_current_posiitons(self):
+        """
+        This function helps to fetch the list of current day positions in market.
+        1. If the "quantity" is more than zero, it means the order is active (not sold yet)
+        2. It also has the last_price, so we do not have to call another api to get latest price
+        
+        """
+
+        
+        headers = generate_header(is_authorization_required=True)
+        api_url =  f"{base_url()}portfolio/short-term-positions"
+        response = requests.get(api_url, headers=headers, timeout=60)
+        print(response.text)
+        if response.status_code == 200:
+            pass
+
+    def fetch_current_day_orders(self):
+        """
+        Fetches all orders for the current day
+        """
+        headers = generate_header(is_authorization_required=True)
+        api_url =  f"{base_url()}/order/retrieve-all"
+        response = requests.get(api_url, headers=headers, timeout=60)
+        print(response.text)
+        if response.status_code == 200:
+            pass
+
+    def exit_order(self):
+        body = {
+            "quantity": 15,
+            "product": "I",
+            "validity": "DAY",
+            "price": 0,
+            "instrument_token": "NSE_FO|41022",
+            "order_type": "MARKET",
+            "transaction_type": "BUY",
+            "disclosed_quantity": 0,
+            "trigger_price": 0,
+            "is_amo": False
+        }
+        headers = generate_header(is_authorization_required=True)
+        headers["accept"] = "application/json"
+        headers["Content-Type"] = "application/json"
+        api_url =  f"{base_url()}order/place"
+        response = requests.post(api_url, headers=headers, timeout=60, data=body)
+        print(response.text)
+        return
 
 
     def fetch_latest_price(self):
@@ -34,7 +82,7 @@ class ExitService:
         # query_instruments = query_instruments[:-1]
 
         headers = generate_header(is_authorization_required=True)
-        api_url =  f"https://api-v2.upstox.com/market-quote/quotes?symbol={self.instrument_key}"
+        api_url =  f"{base_url()}/order/retrieve-all"
         response = requests.get(api_url, headers=headers, timeout=60)
         print(response.text)
         if response.status_code == 200:
