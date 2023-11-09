@@ -51,5 +51,8 @@ def authorize(code: str):
     """
     Route used to scrap all the instruments and store in database
     """
-    UpstoxAuthorization().generate_access_token(code=code)
-    return "Successful", 200
+    response = UpstoxAuthorization().generate_access_token(code=code)
+    if response.status_code == 200:
+        return "Successfully updated the access token", 200
+    
+    return "Failed to update the access token"
