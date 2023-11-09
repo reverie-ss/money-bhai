@@ -26,7 +26,14 @@ def base_url():
     """
     return os.environ.get("UPSTOX_BASE_URL")
 
-def execute_api(method: HTTP_Method, endpoint: UpstoxEndpoint, is_authorization_required: bool = False, body: dict = None, headers: dict = None):
+def execute_api(
+        method: HTTP_Method, 
+        endpoint: UpstoxEndpoint, 
+        is_authorization_required: bool = False, 
+        body: dict = None,
+        headers: dict = None,
+        query_params: str = None
+    ):
     """
     Function used to execute APIs. Helps forming the headers and authorization
     """
@@ -39,6 +46,9 @@ def execute_api(method: HTTP_Method, endpoint: UpstoxEndpoint, is_authorization_
         headers["Authorization"] = "Bearer " + os.environ.get("ACCESS_TOKEN")
 
     api_url =  os.environ.get("UPSTOX_BASE_URL") + endpoint.value
+
+    if query_params:
+        api_url = api_url + "?" + query_params
 
     if method == HTTP_Method.GET:
         return requests.get(api_url, headers=headers, timeout=60)

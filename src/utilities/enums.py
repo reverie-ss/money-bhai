@@ -8,3 +8,13 @@ class InstrumentKey(Enum):
     NIFTY23O1919500CE = "NSE_FO|44452"
     BANKNIFTY23O1844200CE = "NSE_FO|48233"
     NIFTY23OCT19550PE = "NSE_FO|67303"
+
+class HTTP_Method(Enum): # pylint: disable=invalid-name
+    GET = "GET"
+    PUT = "PUT"
+    POST = "POST"
+
+class UpstoxEndpoint(Enum):
+    PLACE_ORDER="/order/place" # API to place an order
+    FETCH_ORDERS="/order/retrieve-all" # API to retrieve the list of a orders placed for the current day
+    FETCH_QUOTES="/market-quote/quotes"
