@@ -45,24 +45,26 @@ class ExitService:
         if response.status_code == 200:
             pass
 
-    def exit_order(self):
+    def place_order(self, quantity: int, instrument_key: str, transaction_type: str):
+        """
+        Funciton is used to entry or exit orders
+        """
         body = {
-            "quantity": 15,
+            "quantity": quantity,
             "product": "I",
             "validity": "DAY",
             "price": 0,
-            "instrument_token": "NSE_FO|41022",
+            "tag": "MoneyBhai",
+            "instrument_token": instrument_key,
             "order_type": "MARKET",
-            "transaction_type": "BUY",
+            "transaction_type": transaction_type,
             "disclosed_quantity": 0,
             "trigger_price": 0,
             "is_amo": False
         }
         headers = generate_header(is_authorization_required=True)
-        headers["accept"] = "application/json"
-        headers["Content-Type"] = "application/json"
         api_url =  f"{base_url()}order/place"
-        response = requests.post(api_url, headers=headers, timeout=60, data=body)
+        response = requests.post(api_url, headers=headers, timeout=60, data=json.dumps(body))
         print(response.text)
         return
 
