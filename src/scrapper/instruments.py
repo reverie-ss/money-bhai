@@ -7,12 +7,9 @@ import os
 import pymongo
 import requests
 import pandas as pd
-from dotenv import load_dotenv
 from pymongo.errors import BulkWriteError
 from src.models.data_model_candle import Instruments
 from src.utilities.script import convert_model_to_dict
-
-load_dotenv()
 
 
 class InstrumentsScrapper:

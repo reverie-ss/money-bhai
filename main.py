@@ -2,17 +2,22 @@
 Main module. This is where it all starts.
 TODO: Move the routes to it's respective modules
 """
+import json
+from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from src.auth.authorization import UpstoxAuthorization
 from src.scrapper.candles import CandleScrapper
 from src.order.exit import ExitService
 from src.scrapper.tradebook import TradebookScrapper
 from src.scrapper.instruments import InstrumentsScrapper
 
+load_dotenv()
+
 app = FastAPI()
 
 
-@app.get("/scrapper/instruments")
+@app.post("/scrapper/instruments")
 def scrap_instruments():
     """
     Route used to scrap all the instruments and store in database
@@ -46,13 +51,10 @@ def trade_exit(instrument_key: str):
     ExitService(instrument_key=instrument_key).start_trailing()
     return "Successful", 200
 
-@app.get("/authorize/{code}")
+@app.get("/authorize/upstox")
 def authorize(code: str):
     """
     Route used to scrap all the instruments and store in database
     """
     response = UpstoxAuthorization().generate_access_token(code=code)
-    if response.status_code == 200:
-        return "Successfully updated the access token", 200
-    
-    return "Failed to update the access token"
+    return JSONResponse(content=json.loads(response.text), status_code=response.status_code)

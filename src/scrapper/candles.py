@@ -6,12 +6,9 @@ from datetime import datetime, timedelta
 from dateutil import parser
 
 import requests
-from dotenv import load_dotenv
 
 from src.models.data_model_candle import Candle
 from src.utilities.singleton import database_client
-
-load_dotenv()
 
 
 class CandleScrapper:
