@@ -3,7 +3,7 @@ Scripts module that contains functions that can be used across all modules
 """
 import json
 import os
-from pydantic import BaseModel
+from pydantic import BaseModel # pylint: disable=no-name-in-module
 import requests
 
 from src.utilities.enums import HTTP_Method, UpstoxEndpoint # pylint: disable=no-name-in-module

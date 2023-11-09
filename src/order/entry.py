@@ -38,7 +38,7 @@ class EntryService:
             endpoint=UpstoxEndpoint.FETCH_QUOTES,
             query_params=query_params
         )
-        
+
         if response.status_code == 200:
             result_dict: dict = (json.loads(response.content)).get("data")
             return result_dict.get(NIFTY_INTRUMENT).get("last_price"), result_dict.get(BANKNIFTY_INTRUMENT).get("last_price"),
@@ -46,5 +46,8 @@ class EntryService:
         return response
 
     def execute(self):
+        """
+        Logix starts here
+        """
         res = self.fetch_latest_price_of_premiums()
         print(res)
