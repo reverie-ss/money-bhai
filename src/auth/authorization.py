@@ -3,6 +3,8 @@ Generates access token from login code
 """
 import os
 import requests
+import dotenv
+import json
 
 class UpstoxAuthorization:
     """
@@ -12,10 +14,28 @@ class UpstoxAuthorization:
     """
     def __init__(self) -> None:
         pass
+    
+    def update_env_variable(self, access_token: str):
+        """
+        Updates the acces token environment value
+        """
+        dotenv_file = dotenv.find_dotenv()
+        dotenv.load_dotenv(dotenv_file)
+
+        print("Retrieving access token")
+        os.environ["ACCESS_TOKEN"] = access_token
+
+        # Write changes to .env file.
+        dotenv.set_key(dotenv_file, "ACCESS_TOKEN", os.environ["ACCESS_TOKEN"])
+        dotenv.load_dotenv()
+        print("Access token updated")
 
     def generate_access_token(self, code: str):
         """
         The authorization code can be used only once. You have to generate it again to get new access token
+
+        Response:
+        {"email":"ss.saswatsahoo@gmail.com","access_token":"","extended_token":null}
         """
 
         # Define the API endpoint URL
@@ -41,4 +61,7 @@ class UpstoxAuthorization:
         response = requests.post(url, headers=headers, data=data)
 
         # Print the response
-        print(response.text)
+        if response.status_code == 200:
+            token = json.loads(response.text).get("access_token")
+            self.update_env_variable(access_token=token)
+        return response

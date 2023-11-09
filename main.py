@@ -3,6 +3,7 @@ Main module. This is where it all starts.
 TODO: Move the routes to it's respective modules
 """
 from fastapi import FastAPI
+from src.auth.authorization import UpstoxAuthorization
 from src.scrapper.candles import CandleScrapper
 from src.order.exit import ExitService
 from src.scrapper.tradebook import TradebookScrapper
@@ -43,4 +44,12 @@ def trade_exit(instrument_key: str):
     Route used to scrap all the instruments and store in database
     """
     ExitService(instrument_key=instrument_key).start_trailing()
+    return "Successful", 200
+
+@app.get("/authorize/{code}")
+def authorize(code: str):
+    """
+    Route used to scrap all the instruments and store in database
+    """
+    UpstoxAuthorization().generate_access_token(code=code)
     return "Successful", 200
