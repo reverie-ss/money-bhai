@@ -5,6 +5,8 @@ from datetime import datetime
 import json
 import time
 import requests
+from src.models.data_model_candle import Instruments
+from src.order.order_manager import ManageOrder
 from src.utilities.enums import HTTP_Method, UpstoxEndpoint
 from src.utilities.script import execute_api
 from src.utilities.singleton import database_client
@@ -14,13 +16,15 @@ class EntryService:
     """
     Has logic to tell which premium to enter with
     1. Fetch the latest price of nifty, banknifty and finnifty
+    2. Figure out the upcoming expiry date
     2. Find the closest strike price from instruments collection
-    3. Choose the strike price and place order
+    3. Choose the instrument and place order
     """
 
-    def __init__(self, index) -> None:
-        self.candles_collection = database_client.get_collection("MinuteCandles")
-        self.index = index
+    def __init__(self, market_index: str, option_type: str) -> None:
+        self.instruments_collection = database_client.get_collection("instruments")
+        self.market_index = market_index
+        self.option_type = option_type
 
     def fetch_latest_price_of_premiums(self):
         """
@@ -42,13 +46,80 @@ class EntryService:
 
         if response.status_code == 200:
             result_dict: dict = (json.loads(response.content)).get("data")
-            return result_dict.get(NIFTY_INTRUMENT).get("last_price"), result_dict.get(BANKNIFTY_INTRUMENT).get("last_price"),
+            return result_dict.get(NIFTY_INTRUMENT.replace("|", ":")).get("last_price"), result_dict.get(BANKNIFTY_INTRUMENT.replace("|", ":")).get("last_price"),
     
         return response
+
+    def find_upcoming_expiry(self):
+        """
+        """
+        current_date = datetime.now()
+        current_date = current_date.strftime("%Y-%m-%d")
+        query = [
+            {
+                '$match': {
+                    'expiry': {
+                        '$gte': current_date
+                    }, 
+                    'trading_symbol': {
+                        '$regex': '^' + self.market_index
+                    },
+                }
+            }, {
+                '$sort': {
+                    'expiry': 1
+                }
+            },  {
+                '$limit': 1
+            }
+        ]
+        db_response = list(self.instruments_collection.aggregate(query))
+        
+        return db_response[0].get("expiry")
+
+    def fetch_relevant_premium(self, strike: int):
+        """
+        query from instruments collection
+        """
+        expiry = self.find_upcoming_expiry()
+        query = [
+            {
+                '$match': {
+                    'instrument_type': 'OPTIDX', 
+                    'option_type': self.option_type, 
+                    'expiry': expiry, 
+                    'trading_symbol': {
+                        '$regex': '^' + self.market_index
+                    }
+                }
+            }, {
+                '$addFields': {
+                    'differnece': {
+                        '$abs': {
+                            '$subtract': [
+                                '$strike', strike
+                            ]
+                        }
+                    }
+                }
+            }, {
+                '$sort': {
+                    'differnece': 1
+                }
+            }
+        ]
+        instruments_list = list(self.instruments_collection.aggregate(query))
+        return Instruments(**instruments_list[0])
 
     def execute(self):
         """
         Logix starts here
         """
-        res = self.fetch_latest_price_of_premiums()
-        return res
+        nifty50, bank_nifty = self.fetch_latest_price_of_premiums()
+        strike = bank_nifty
+        if self.market_index == "NIFTY":
+            strike = nifty50
+
+        instrument: Instruments = self.fetch_relevant_premium(strike=strike)
+        ManageOrder()
+        return nifty50, bank_nifty

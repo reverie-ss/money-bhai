@@ -52,12 +52,12 @@ def trade_exit(instrument_key: str):
     ExitService(instrument_key=instrument_key).start_trailing()
     return "Successful", 200
 
-@app.get("/trade/entry/{index}")
-def trade_entry(index: str):
+@app.get("/trade/entry/{market_index}/{option_type}")
+def trade_entry(market_index: str, option_type: str):
     """
     Route used to scrap all the instruments and store in database
     """
-    response = EntryService(index=index).execute()
+    response = EntryService(market_index=market_index, option_type=option_type).execute()
     return response
 
 @app.get("/authorize/upstox")
