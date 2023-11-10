@@ -1,6 +1,7 @@
 """
 Executes order
 """
+from src.models.data_model_candle import Instruments
 from src.utilities.enums import HTTP_Method, UpstoxEndpoint
 from src.utilities.script import execute_api
 
@@ -10,20 +11,20 @@ class ManageOrder:
     has functions to execute a trade
     """
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, instrument: Instruments) -> None:
+        self.instrument = instrument
 
-    def place_order(self, quantity: int, instrument_key: str, transaction_type: str):
+    def place_order(self, transaction_type: str):
         """
         Funciton is used to entry or exit orders
         """
         body = {
-            "quantity": quantity,
+            "quantity": self.instrument.lot_size,
             "product": "I",
             "validity": "DAY",
             "price": 0,
             "tag": "MoneyBhai",
-            "instrument_token": instrument_key,
+            "instrument_token": self.instrument.instrument_key,
             "order_type": "MARKET",
             "transaction_type": transaction_type,
             "disclosed_quantity": 0,
@@ -43,3 +44,13 @@ class ManageOrder:
         )
         print(response.text)
         return response
+
+    def buy(self):
+        return self.place_order(
+            transaction_type="BUY"
+        )
+
+    def sell(self):
+        return self.place_order(
+            transaction_type="SELL"
+        )
