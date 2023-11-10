@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from src.auth.authorization import UpstoxAuthorization
+from src.order.entry import EntryService
 from src.scrapper.candles import CandleScrapper
 from src.order.exit import ExitService
 from src.scrapper.tradebook import TradebookScrapper
@@ -50,6 +51,14 @@ def trade_exit(instrument_key: str):
     """
     ExitService(instrument_key=instrument_key).start_trailing()
     return "Successful", 200
+
+@app.get("/trade/entry/{index}")
+def trade_entry(index: str):
+    """
+    Route used to scrap all the instruments and store in database
+    """
+    response = EntryService(index=index).execute()
+    return response
 
 @app.get("/authorize/upstox")
 def authorize(code: str):

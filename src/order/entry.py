@@ -18,9 +18,9 @@ class EntryService:
     3. Choose the strike price and place order
     """
 
-    def __init__(self, instrument_key) -> None:
+    def __init__(self, index) -> None:
         self.candles_collection = database_client.get_collection("MinuteCandles")
-        self.instrument_key = instrument_key
+        self.index = index
 
     def fetch_latest_price_of_premiums(self):
         """
@@ -31,12 +31,13 @@ class EntryService:
         """
         NIFTY_INTRUMENT = "NSE_INDEX|Nifty 50"
         BANKNIFTY_INTRUMENT = "NSE_INDEX|Nifty Bank"
-        query_params = "NSE_INDEX|Nifty 50,NSE_INDEX|Nifty Bank"
+        query_params = "symbol=NSE_INDEX|Nifty 50,NSE_INDEX|Nifty Bank"
 
         response = execute_api(
             method=HTTP_Method.GET,
             endpoint=UpstoxEndpoint.FETCH_QUOTES,
-            query_params=query_params
+            query_params=query_params,
+            is_authorization_required=True
         )
 
         if response.status_code == 200:
@@ -50,4 +51,4 @@ class EntryService:
         Logix starts here
         """
         res = self.fetch_latest_price_of_premiums()
-        print(res)
+        return res

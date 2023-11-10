@@ -9,7 +9,7 @@ import json
 class UpstoxAuthorization:
     """
     To generate the code out of login to upstox, follow the given url
-    https://api-v2.upstox.com/login/authorization/dialog?response_type=code&client_id=<CLIENT_ID>&redirect_uri=https://github.com/reverie-ss/
+    https://api-v2.upstox.com/login/authorization/dialog?response_type=code&client_id=<CLIENT_ID>&redirect_uri=http://127.0.0.1:8000/authorize/upstox
     Next login into your account and get the authorization code appended to redirect url
     """
     def __init__(self) -> None:
