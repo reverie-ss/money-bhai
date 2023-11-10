@@ -17,4 +17,5 @@ class HTTP_Method(Enum): # pylint: disable=invalid-name
 class UpstoxEndpoint(Enum):
     PLACE_ORDER="/order/place" # API to place an order
     FETCH_ORDERS="/order/retrieve-all" # API to retrieve the list of a orders placed for the current day
-    FETCH_QUOTES="/market-quote/quotes"
+    FETCH_QUOTES="market-quote/quotes"
+    FETCH_POSITIONS="portfolio/short-term-positions" # fetch the list of current day positions in market

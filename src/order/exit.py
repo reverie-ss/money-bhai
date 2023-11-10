@@ -5,8 +5,10 @@ from datetime import datetime
 import json
 import time
 import requests
-from src.utilities.script import generate_header, base_url
+from src.utilities.script import base_url
 from src.utilities.singleton import database_client
+from src.utilities.enums import HTTP_Method, UpstoxEndpoint
+from src.utilities.script import execute_api
 
 
 class ExitService:
@@ -20,54 +22,53 @@ class ExitService:
 
     def fetch_current_posiitons(self):
         """
-        This function helps to fetch the list of current day positions in market.
+        This function helps to fetch the list of current day active/inactive positions in market.
         1. If the "quantity" is more than zero, it means the order is active (not sold yet)
         2. It also has the last_price, so we do not have to call another api to get latest price
         
         """
 
-        
-        headers = generate_header(is_authorization_required=True)
-        api_url =  f"{base_url()}portfolio/short-term-positions"
-        response = requests.get(api_url, headers=headers, timeout=60)
-        print(response.text)
-        if response.status_code == 200:
-            pass
+        response = execute_api(
+            method=HTTP_Method.GET,
+            endpoint=UpstoxEndpoint.FETCH_POSITIONS,
+        )
+        print(response)
+        return response
 
     def fetch_current_day_orders(self):
         """
-        Fetches all orders for the current day
+        Fetches all orders for the current day.
         """
-        headers = generate_header(is_authorization_required=True)
-        api_url =  f"{base_url()}/order/retrieve-all"
-        response = requests.get(api_url, headers=headers, timeout=60)
-        print(response.text)
-        if response.status_code == 200:
-            pass
 
-    def fetch_latest_price(self):
-        """
-        Fetches the latest candle details from upstox api for one or more instruments
+        response = execute_api(
+            method=HTTP_Method.GET,
+            endpoint=UpstoxEndpoint.FETCH_ORDERS,
+        )
+        print(response.text)
+
+    # def fetch_latest_price(self):
+    #     """
+    #     Fetches the latest candle details from upstox api for one or more instruments
         
-        Args:
-            - `instruments_list` : list of all the instruments key values (for example, ["NSE|FO4437", "NSE|FO4438"])
-        """
+    #     Args:
+    #         - `instruments_list` : list of all the instruments key values (for example, ["NSE|FO4437", "NSE|FO4438"])
+    #     """
 
-        # Convert the list into string separated by commas
-        # query_instruments = ""
-        # for instrument in instruments_list:
-        #     query_instruments = query_instruments + instrument + ","
-        # query_instruments = query_instruments[:-1]
+    #     # Convert the list into string separated by commas
+    #     # query_instruments = ""
+    #     # for instrument in instruments_list:
+    #     #     query_instruments = query_instruments + instrument + ","
+    #     # query_instruments = query_instruments[:-1]
 
-        headers = generate_header(is_authorization_required=True)
-        api_url =  f"{base_url()}/order/retrieve-all"
-        response = requests.get(api_url, headers=headers, timeout=60)
-        print(response.text)
-        if response.status_code == 200:
-            result_dict = (json.loads(response.content)).get("data")
-            for key_of_instrument in result_dict:
-                return result_dict.get(key_of_instrument).get("last_price")
-        return None
+    #     headers = generate_header(is_authorization_required=True)
+    #     api_url =  f"{base_url()}/order/retrieve-all"
+    #     response = requests.get(api_url, headers=headers, timeout=60)
+    #     print(response.text)
+    #     if response.status_code == 200:
+    #         result_dict = (json.loads(response.content)).get("data")
+    #         for key_of_instrument in result_dict:
+    #             return result_dict.get(key_of_instrument).get("last_price")
+    #     return None
     
     def track_premium(self, stop_loss_percent: float, trailing_percent: float):
         """
@@ -81,7 +82,7 @@ class ExitService:
         counter = 0
         current_time = datetime.now()
         while True:
-            last_price = self.fetch_latest_price()
+            last_price = self.fetch_current_posiitons()
             
             if last_price:
 

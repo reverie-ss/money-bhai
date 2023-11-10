@@ -40,6 +40,7 @@ def execute_api(
     if not headers:
         headers = {}
         
+    headers["Accept"] = "application/json"
     headers["Api-Version"] = "2.0"
 
     if is_authorization_required:
