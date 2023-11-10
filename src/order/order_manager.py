@@ -5,7 +5,6 @@ from src.models.data_model_candle import Instruments
 from src.utilities.enums import HTTP_Method, UpstoxEndpoint
 from src.utilities.script import execute_api
 
-
 class ManageOrder:
     """
     has functions to execute a trade
@@ -46,11 +45,17 @@ class ManageOrder:
         return response
 
     def buy(self):
+        """
+        Enter Position
+        """
         return self.place_order(
             transaction_type="BUY"
         )
 
     def sell(self):
+        """
+        Exit Position
+        """
         return self.place_order(
             transaction_type="SELL"
         )

@@ -6,6 +6,7 @@ import json
 import time
 import requests
 from src.models.data_model_candle import Instruments
+from src.order.exit import ExitService
 from src.order.order_manager import ManageOrder
 from src.utilities.enums import HTTP_Method, UpstoxEndpoint
 from src.utilities.script import execute_api
@@ -116,10 +117,26 @@ class EntryService:
         Logix starts here
         """
         nifty50, bank_nifty = self.fetch_latest_price_of_premiums()
+        print(f"Current price of indexes are: NIFTY-{nifty50} and BANKNIFTY-{bank_nifty}")
+
         strike = bank_nifty
         if self.market_index == "NIFTY":
             strike = nifty50
 
         instrument: Instruments = self.fetch_relevant_premium(strike=strike)
-        ManageOrder()
-        return nifty50, bank_nifty
+        print("Found strike at" + instrument.instrument_key)
+        print(instrument.dict())
+
+        response = ManageOrder(instrument=instrument).buy()
+        if response.status_code == 200:
+            print(f"Placed order for {instrument.instrument_key}")
+            exit_response: bool = ExitService(
+                instrument_key=instrument.instrument_key,
+                stop_loss_percent=10,
+                trailing_percent=5
+            ).start_trailing()
+
+            if exit_response:
+                ManageOrder(instrument=instrument).sell()
+            
+        return response

@@ -2,9 +2,7 @@
 Constantly checks for active orders and closes if conditions are met
 """
 from datetime import datetime
-import json
 import time
-import requests
 from src.utilities.script import base_url
 from src.utilities.singleton import database_client
 from src.utilities.enums import HTTP_Method, UpstoxEndpoint
@@ -16,16 +14,17 @@ class ExitService:
     Has logic to tell when to exit
     """
 
-    def __init__(self, instrument_key) -> None:
+    def __init__(self, instrument_key: str, stop_loss_percent: float, trailing_percent: float) -> None:
         self.candles_collection = database_client.get_collection("MinuteCandles")
         self.instrument_key = instrument_key
+        self.stop_loss_percent = stop_loss_percent
+        self.trailing_percent = trailing_percent
 
     def fetch_current_posiitons(self):
         """
         This function helps to fetch the list of current day active/inactive positions in market.
         1. If the "quantity" is more than zero, it means the order is active (not sold yet)
         2. It also has the last_price, so we do not have to call another api to get latest price
-        
         """
 
         response = execute_api(
@@ -70,7 +69,7 @@ class ExitService:
     #             return result_dict.get(key_of_instrument).get("last_price")
     #     return None
     
-    def track_premium(self, stop_loss_percent: float, trailing_percent: float):
+    def start_trailing(self) -> bool:
         """
         Tracks the instrument every second to check if exit conditions are met.
         """
@@ -87,9 +86,9 @@ class ExitService:
             if last_price:
 
                 if trailing_target == -1 or stop_loss == -1:
-                    trailing_variation = last_price*(trailing_percent/100)
+                    trailing_variation = last_price*(self.trailing_percent/100)
                     trailing_target = last_price + trailing_variation
-                    stop_loss = last_price - last_price*(stop_loss_percent/100)
+                    stop_loss = last_price - last_price*(self.stop_loss_percent/100)
 
                 # Exit if stoploss hits
                 if last_price <= stop_loss:
@@ -111,21 +110,7 @@ class ExitService:
 
         total_time = total_time + (datetime.now() - current_time).seconds
         print("Average Time:" + str(total_time/counter))
+        print(f"EXIT @{last_price} (stop_loss={stop_loss} and trailing_target={trailing_target})")
         
-        while True:
-            print(f"EXIT @{last_price} (stop_loss={stop_loss} and trailing_target={trailing_target})")
-
-    
-    def start_trailing(self):
-        """
-        Intitates the process of exiting a position. 
-        Here are the following steps:
-        1. Get the latest order from order history API
-        2. Take the premium and track it every second
-        3. Track premium to exit when needed
-        """
-
-        self.track_premium(
-            stop_loss_percent=10,
-            trailing_percent=5
-        )
+        return True
+            
