@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from src.auth.authorization import UpstoxAuthorization
 from src.order.entry import EntryService
-from src.scrapper.candles import CandleScrapper, SyncOrderCandles
+from src.scrapper.candles import CandleScrapper, SyncInstrumentCandles
 from src.order.exit import ExitService
 from src.scrapper.tradebook import TradebookScrapper
 from src.scrapper.instruments import InstrumentsScrapper
@@ -40,7 +40,15 @@ def scrap_sync_order_instruments():
     """
     Route used to scrap all the instruments and store in database
     """
-    SyncOrderCandles().fetch_all_order_instruments()
+    SyncInstrumentCandles().fetch_all_order_instruments()
+    return JSONResponse(content="Synced Successfully", status_code=200)
+
+@app.get("/scrapper/sync-indexes")
+def scrap_sync_index_instruments():
+    """
+    Route used to scrap all the instruments and store in database
+    """
+    SyncInstrumentCandles().scrap_index_candles()
     return JSONResponse(content="Synced Successfully", status_code=200)
 
 

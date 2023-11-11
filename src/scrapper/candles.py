@@ -158,7 +158,7 @@ class CandleScrapper:
     
 
 
-class SyncOrderCandles:
+class SyncInstrumentCandles:
     """
     Class is used to fetch all the price actions of all the orders that has been executed
     """
@@ -191,3 +191,32 @@ class SyncOrderCandles:
         for order in orders_list:
             response = CandleScrapper(instrument_key=order.get("instrument").get("instrument_key")).fetch_missing_historical_data()
             print(response)
+
+    def scrap_index_candles(self):
+        """
+        This function fetches the index candles
+        """
+        instruction_key_list = ["NSE_INDEX|Nifty 50", "NSE_INDEX|Nifty Bank"]
+
+        for instruction_key in instruction_key_list:
+            response = CandleScrapper(instrument_key=instruction_key).fetch_missing_historical_data()
+            print(response)
+
+
+
+class ScrapRelavantStrikes:
+    """
+    This class is to fetch the relevant strike prices.
+    1. Fetch the latest prices of NIFTY, BANKNIFTY and FINNIFTY
+    2. Fetch 4 strike prices around the latest price (4 above, 4 below)
+    3. Fetch the next 2 expiry strikes
+    4. Scrap the data and store
+    """
+    def __init__(self):
+        pass
+
+
+    def execute(self):
+        """
+        Function logic starts here
+        """
