@@ -54,5 +54,5 @@ def execute_api(
     if method == HTTP_Method.GET:
         return requests.get(api_url, headers=headers, timeout=60)
     if method == HTTP_Method.POST:
-        return requests.post(api_url, headers=headers, timeout=60, data=json.loads(body))
+        return requests.post(api_url, headers=headers, timeout=60, data=json.dumps(body))
     return None
