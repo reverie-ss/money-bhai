@@ -18,8 +18,11 @@ class CandleScrapper:
 
     def __init__(self, instrument_key: str) -> None:
         self.candles_collection = database_client.get_collection("MinuteCandles")
+        self.orders_collection = database_client.get_collection("orders")
 
         self.instrument_key = instrument_key
+
+        print(f"Fetching price action for {self.instrument_key}")
 
     def insert_into_database(self, sorted_candles: list[Candle]) -> int:
         """
@@ -144,7 +147,7 @@ class CandleScrapper:
         res = list(self.candles_collection.find({"meta": self.instrument_key}).sort("_id", -1).limit(1))
 
         # Fetch from start if no data exists
-        start_date: datetime = datetime.now() - timedelta(days=35)
+        start_date: datetime = datetime.now() - timedelta(days=30)
 
         # Check if data already exists
         if len(res) is not 0:
@@ -152,3 +155,39 @@ class CandleScrapper:
             start_date = last_inserted_candle.ts
 
         return self.fetch_historical_data(start_date=start_date)
+    
+
+
+class SyncOrderCandles:
+    """
+    Class is used to fetch all the price actions of all the orders that has been executed
+    """
+
+    def __init__(self):
+        self.orders_collection = database_client.get_collection("orders")
+
+    def fetch_all_order_instruments(self):
+        """
+        This function will fetch all the instrument keys in the database.
+        Then fetch candle details of all the keys and store in database
+        """
+        query = [
+            {
+                '$lookup': {
+                    'from': 'instruments', 
+                    'localField': 'trading_symbol', 
+                    'foreignField': 'trading_symbol', 
+                    'as': 'instrument'
+                }
+            }, {
+                '$unwind': {
+                    'path': '$instrument', 
+                    'preserveNullAndEmptyArrays': False
+                }
+            }
+        ]
+        orders_list = list(self.orders_collection.aggregate(query))
+
+        for order in orders_list:
+            response = CandleScrapper(instrument_key=order.get("instrument").get("instrument_key")).fetch_missing_historical_data()
+            print(response)

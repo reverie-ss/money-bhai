@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from src.auth.authorization import UpstoxAuthorization
 from src.order.entry import EntryService
-from src.scrapper.candles import CandleScrapper
+from src.scrapper.candles import CandleScrapper, SyncOrderCandles
 from src.order.exit import ExitService
 from src.scrapper.tradebook import TradebookScrapper
 from src.scrapper.instruments import InstrumentsScrapper
@@ -35,6 +35,14 @@ def scrap_tradebook():
     response = TradebookScrapper().fill_tradebook_from_zerodha()
     return response
 
+@app.get("/scrapper/sync-order-instruments")
+def scrap_sync_order_instruments():
+    """
+    Route used to scrap all the instruments and store in database
+    """
+    SyncOrderCandles().fetch_all_order_instruments()
+    return JSONResponse(content="Synced Successfully", status_code=200)
+
 
 @app.get("/scrapper/candle/{instrument_key}")
 def scrap_candles(instrument_key: str):
@@ -49,7 +57,11 @@ def trade_exit(instrument_key: str):
     """
     Route used to scrap all the instruments and store in database
     """
-    ExitService(instrument_key=instrument_key).start_trailing()
+    ExitService(
+        instrument_key=instrument_key,
+        stop_loss_percent=10,
+        trailing_percent=5
+    ).start_trailing()
     return "Successful", 200
 
 @app.get("/trade/entry/{market_index}/{option_type}")

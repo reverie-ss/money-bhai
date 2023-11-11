@@ -3,8 +3,6 @@ Constantly checks for active orders and closes if conditions are met
 """
 from datetime import datetime
 import json
-import time
-import requests
 from src.models.data_model_candle import Instruments
 from src.order.exit import ExitService
 from src.order.order_manager import ManageOrder
@@ -117,7 +115,7 @@ class EntryService:
         Logix starts here
         """
         nifty50, bank_nifty = self.fetch_latest_price_of_premiums()
-        print(f"Current price of indexes are: NIFTY-{nifty50} and BANKNIFTY-{bank_nifty}")
+        print(f"Indexes @ NIFTY:{nifty50} and BANKNIFTY:{bank_nifty}")
 
         strike = bank_nifty
         if self.market_index == "NIFTY":
