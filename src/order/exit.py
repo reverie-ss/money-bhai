@@ -3,6 +3,9 @@ Constantly checks for active orders and closes if conditions are met
 """
 from datetime import datetime
 import time
+import json
+
+from requests import Response
 from src.utilities.script import base_url
 from src.utilities.singleton import database_client
 from src.utilities.enums import HTTP_Method, UpstoxEndpoint
@@ -14,9 +17,8 @@ class ExitService:
     Has logic to tell when to exit
     """
 
-    def __init__(self, instrument_key: str, stop_loss_percent: float, trailing_percent: float) -> None:
+    def __init__(self, stop_loss_percent: float, trailing_percent: float) -> None:
         self.candles_collection = database_client.get_collection("MinuteCandles")
-        self.instrument_key = instrument_key
         self.stop_loss_percent = stop_loss_percent
         self.trailing_percent = trailing_percent
 
@@ -30,6 +32,7 @@ class ExitService:
         response = execute_api(
             method=HTTP_Method.GET,
             endpoint=UpstoxEndpoint.FETCH_POSITIONS,
+            is_authorization_required=True
         )
         print(response)
         return response
@@ -45,30 +48,17 @@ class ExitService:
         )
         print(response.text)
 
-    # def fetch_latest_price(self):
-    #     """
-    #     Fetches the latest candle details from upstox api for one or more instruments
+    def get_active_order(self, last_price_response: Response):
+
+        if last_price_response.status_code != 200:
+            return None
         
-    #     Args:
-    #         - `instruments_list` : list of all the instruments key values (for example, ["NSE|FO4437", "NSE|FO4438"])
-    #     """
+        order_list = json.loads(last_price_response.text).get("data")
+        for order in order_list:
+            if order.get("quantity") > 0:
+                return order
+        return None
 
-    #     # Convert the list into string separated by commas
-    #     # query_instruments = ""
-    #     # for instrument in instruments_list:
-    #     #     query_instruments = query_instruments + instrument + ","
-    #     # query_instruments = query_instruments[:-1]
-
-    #     headers = generate_header(is_authorization_required=True)
-    #     api_url =  f"{base_url()}/order/retrieve-all"
-    #     response = requests.get(api_url, headers=headers, timeout=60)
-    #     print(response.text)
-    #     if response.status_code == 200:
-    #         result_dict = (json.loads(response.content)).get("data")
-    #         for key_of_instrument in result_dict:
-    #             return result_dict.get(key_of_instrument).get("last_price")
-    #     return None
-    
     def start_trailing(self) -> bool:
         """
         Tracks the instrument every second to check if exit conditions are met.
@@ -78,12 +68,18 @@ class ExitService:
         trailing_variation: float = 0
         last_price: float = 0
         total_time = 0
-        counter = 0
+        counter = 1
         current_time = datetime.now()
         while True:
-            last_price = self.fetch_current_posiitons()
+            last_price_response = self.fetch_current_posiitons()
             
-            if last_price:
+            if last_price_response.status_code == 200:
+                active_order = self.get_active_order(last_price_response=last_price_response)
+
+                if active_order:
+                    last_price = active_order.get("last_price")
+                else:
+                    break
 
                 if trailing_target == -1 or stop_loss == -1:
                     trailing_variation = last_price*(self.trailing_percent/100)
@@ -96,9 +92,9 @@ class ExitService:
                     break
                 
                 # Exit before day ends
-                if current_time.hour == 15:
-                    print("Exit")
-                    break
+                # if current_time.hour == 15:
+                #     print("Exit")
+                #     break
 
                 
                 # Trailing Stoploss
@@ -114,3 +110,4 @@ class ExitService:
         
         return True
             
+# ExitService(stop_loss_percent=5, trailing_percent=10).start_trailing()
