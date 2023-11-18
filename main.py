@@ -4,7 +4,7 @@ TODO: Move the routes to it's respective modules
 """
 import json
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from src.auth.authorization import UpstoxAuthorization
 from src.order.entry import EntryService
@@ -12,6 +12,7 @@ from src.scrapper.candles import CandleScrapper, SyncInstrumentCandles
 from src.order.exit import ExitService
 from src.scrapper.tradebook import TradebookScrapper
 from src.scrapper.instruments import InstrumentsScrapper
+from src.models.trades import TradeEntry
 
 load_dotenv()
 
@@ -72,12 +73,12 @@ def trade_exit(instrument_key: str):
     ).start_trailing()
     return "Successful", 200
 
-@app.get("/trade/entry/{market_index}/{option_type}")
-def trade_entry(market_index: str, option_type: str):
+@app.post("/trade/entry")
+def trade_enter(trade_entry: TradeEntry):
     """
     Route used to scrap all the instruments and store in database
     """
-    response = EntryService(market_index=market_index, option_type=option_type).execute()
+    response = EntryService(trade_entry=trade_entry).buy()
     return response
 
 @app.get("/authorize/upstox")
