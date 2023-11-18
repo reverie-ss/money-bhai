@@ -4,6 +4,7 @@ Constantly checks for active orders and closes if conditions are met
 from datetime import datetime
 import json
 from src.models.data_model_candle import Instruments
+from src.models.trades import TradeEntry
 from src.order.exit import ExitService
 from src.order.order_manager import ManageOrder
 from src.utilities.enums import HTTP_Method, UpstoxEndpoint
@@ -20,10 +21,9 @@ class EntryService:
     3. Choose the instrument and place order
     """
 
-    def __init__(self, market_index: str, option_type: str) -> None:
+    def __init__(self, trade_entry: TradeEntry) -> None:
         self.instruments_collection = database_client.get_collection("instruments")
-        self.market_index = market_index
-        self.option_type = option_type
+        self.trade_entry = trade_entry
 
     def fetch_latest_price_of_premiums(self):
         """
@@ -61,7 +61,7 @@ class EntryService:
                         '$gte': current_date
                     }, 
                     'trading_symbol': {
-                        '$regex': '^' + self.market_index
+                        '$regex': '^' + self.trade_entry.market_index
                     },
                 }
             }, {
@@ -85,10 +85,10 @@ class EntryService:
             {
                 '$match': {
                     'instrument_type': 'OPTIDX', 
-                    'option_type': self.option_type, 
+                    'option_type': self.trade_entry.option_type, 
                     'expiry': expiry, 
                     'trading_symbol': {
-                        '$regex': '^' + self.market_index
+                        '$regex': '^' + self.trade_entry.market_index
                     }
                 }
             }, {
@@ -118,7 +118,7 @@ class EntryService:
         print(f"Indexes @ NIFTY:{nifty50} and BANKNIFTY:{bank_nifty}")
 
         strike = bank_nifty
-        if self.market_index == "NIFTY":
+        if self.trade_entry.market_index == "NIFTY":
             strike = nifty50
 
         instrument: Instruments = self.fetch_relevant_premium(strike=strike)
@@ -129,12 +129,27 @@ class EntryService:
         if response.status_code == 200:
             print(f"Placed order for {instrument.instrument_key}")
             exit_response: bool = ExitService(
-                instrument_key=instrument.instrument_key,
                 stop_loss_percent=10,
                 trailing_percent=5
             ).start_trailing()
-
-            if exit_response:
-                ManageOrder(instrument=instrument).sell()
             
         return response
+    
+    def buy_specific_strike(self, strike: int):
+
+        instrument: Instruments = self.fetch_relevant_premium(strike=strike)
+        print("Found strike at" + instrument.instrument_key)
+        print(instrument.dict())
+
+        response = ManageOrder(instrument=instrument).buy()
+        if response.status_code == 200:
+            print(f"Placed order for {instrument.instrument_key}")
+            exit_response: bool = ExitService(
+                stop_loss_percent=10,
+                trailing_percent=5
+            ).start_trailing()
+        
+        return response
+    
+    
+            
