@@ -6,6 +6,8 @@ import time
 import json
 
 from requests import Response
+from src.models.data_model_candle import Instruments
+from src.order.order_manager import ManageOrder
 from src.utilities.script import base_url
 from src.utilities.singleton import database_client
 from src.utilities.enums import HTTP_Method, UpstoxEndpoint
@@ -59,6 +61,12 @@ class ExitService:
                 return order
         return None
 
+    def fetch_instrument(self, instrument_key):
+
+        self.instruments_collection = database_client.get_collection("instruments")
+        instrument: Instruments = Instruments(**self.instruments_collection.find_one({"instrument_key": instrument_key}))
+        return instrument
+
     def start_trailing(self) -> bool:
         """
         Tracks the instrument every second to check if exit conditions are met.
@@ -72,10 +80,11 @@ class ExitService:
         current_time = datetime.now()
         while True:
             last_price_response = self.fetch_current_posiitons()
+            print(last_price, stop_loss, trailing_target)
             
             if last_price_response.status_code == 200:
                 active_order = self.get_active_order(last_price_response=last_price_response)
-
+                
                 if active_order:
                     last_price = active_order.get("last_price")
                 else:
@@ -106,8 +115,10 @@ class ExitService:
 
         total_time = total_time + (datetime.now() - current_time).seconds
         print("Average Time:" + str(total_time/counter))
-        print(f"EXIT @{last_price} (stop_loss={stop_loss} and trailing_target={trailing_target})")
-        
+        print(f"EXIT @{last_price} (stop_loss={stop_loss} and trailing_target={trailing_target})")  
+        instrument_key = active_order.get("instrument_token")
+
+        ManageOrder(instrument=self.fetch_instrument(instrument_key=instrument_key)).sell()
+
         return True
             
-# ExitService(stop_loss_percent=5, trailing_percent=10).start_trailing()
