@@ -108,13 +108,13 @@ class CandleScrapper:
         if end_date is None:
             end_date = default_end_date
 
-        while start_date<end_date:
+        while start_date<=end_date:
             start_date = start_date + timedelta(days=1)
             print(f"Checking for date {start_date} {start_date.weekday()}")
 
             # Excluding weekends
-            if start_date.weekday() > 4:
-                continue
+            # if start_date.weekday() > 4:
+            #     continue
 
             date = start_date.strftime("%Y-%m-%d")
             upstox_response = self.fetch_upstox_date(date=date)
