@@ -8,7 +8,6 @@ import json
 from requests import Response
 from src.models.data_model_candle import Instruments
 from src.order.order_manager import ManageOrder
-from src.utilities.script import base_url
 from src.utilities.singleton import database_client
 from src.utilities.enums import HTTP_Method, UpstoxEndpoint
 from src.utilities.script import execute_api
