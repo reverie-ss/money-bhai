@@ -132,10 +132,14 @@ class EntryService:
                 stop_loss_percent=10,
                 trailing_percent=5
             ).start_trailing()
+            print(exit_response)
             
         return response
     
     def buy_specific_strike(self, strike: int):
+        """
+        Used to buy specific strikes
+        """
 
         instrument: Instruments = self.fetch_relevant_premium(strike=strike)
         print("Found strike at" + instrument.instrument_key)
@@ -148,6 +152,7 @@ class EntryService:
                 stop_loss_percent=10,
                 trailing_percent=5
             ).start_trailing()
+            print(exit_response)
         
         return response
     
