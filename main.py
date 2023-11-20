@@ -61,15 +61,14 @@ def scrap_candles(instrument_key: str):
     response = CandleScrapper(instrument_key=instrument_key).fetch_missing_historical_data()
     return response
 
-@app.get("/trade/exit/{instrument_key}")
-def trade_exit(instrument_key: str):
+@app.get("/trade/exit/")
+def trade_exit():
     """
     Route used to scrap all the instruments and store in database
     """
     ExitService(
-        instrument_key=instrument_key,
-        stop_loss_percent=10,
-        trailing_percent=5
+        stop_loss_percent=5,
+        trailing_percent=3
     ).start_trailing()
     return "Successful", 200
 
@@ -78,7 +77,7 @@ def trade_enter(trade_entry: TradeEntry):
     """
     Route used to scrap all the instruments and store in database
     """
-    response = EntryService(trade_entry=trade_entry).buy()
+    response = EntryService(trade_entry=trade_entry).execute()
     return response
 
 @app.get("/authorize/upstox")

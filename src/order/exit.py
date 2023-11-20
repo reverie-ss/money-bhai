@@ -75,6 +75,7 @@ class ExitService:
         trailing_target: float = -1
         trailing_variation: float = 0
         last_price: float = 0
+        quantity: int = 0
         total_time = 0
         counter = 1
         current_time = datetime.now()
@@ -87,6 +88,7 @@ class ExitService:
                 
                 if active_order:
                     last_price = active_order.get("last_price")
+                    quantity = active_order.get("quantity")
                 else:
                     break
 
@@ -118,7 +120,7 @@ class ExitService:
         print(f"EXIT @{last_price} (stop_loss={stop_loss} and trailing_target={trailing_target})")  
         instrument_key = active_order.get("instrument_token")
 
-        ManageOrder(instrument=self.fetch_instrument(instrument_key=instrument_key)).sell()
+        ManageOrder(instrument=self.fetch_instrument(instrument_key=instrument_key), quantity=quantity).sell()
 
         return True
             

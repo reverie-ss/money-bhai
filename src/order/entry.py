@@ -125,7 +125,7 @@ class EntryService:
         print("Found strike at" + instrument.instrument_key)
         print(instrument.dict())
 
-        response = ManageOrder(instrument=instrument).buy()
+        response = ManageOrder(instrument=instrument, quantity=self.trade_entry.quantity).buy()
         if response.status_code == 200:
             print(f"Placed order for {instrument.instrument_key}")
             exit_response: bool = ExitService(
@@ -141,7 +141,7 @@ class EntryService:
         print("Found strike at" + instrument.instrument_key)
         print(instrument.dict())
 
-        response = ManageOrder(instrument=instrument).buy()
+        response = ManageOrder(instrument=instrument, quantity=self.trade_entry.quantity).buy()
         if response.status_code == 200:
             print(f"Placed order for {instrument.instrument_key}")
             exit_response: bool = ExitService(

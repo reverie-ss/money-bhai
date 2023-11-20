@@ -10,15 +10,16 @@ class ManageOrder:
     has functions to execute a trade
     """
 
-    def __init__(self, instrument: Instruments) -> None:
+    def __init__(self, instrument: Instruments, quantity: int) -> None:
         self.instrument = instrument
+        self.quantity = quantity
 
     def place_order(self, transaction_type: str):
         """
         Funciton is used to entry or exit orders
         """
         body = {
-            "quantity": self.instrument.lot_size,
+            "quantity": self.instrument.lot_size * self.quantity,
             "product": "I",
             "validity": "DAY",
             "price": 0,
