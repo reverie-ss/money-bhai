@@ -21,6 +21,7 @@ class ExitService:
 
     def __init__(self, stop_loss_percent: float, trailing_percent: float) -> None:
         self.candles_collection = database_client.get_collection("MinuteCandles")
+        self.instruments_collection = database_client.get_collection("instruments")
         self.stop_loss_percent = stop_loss_percent
         self.trailing_percent = trailing_percent
 
@@ -51,6 +52,9 @@ class ExitService:
         print(response.text)
 
     def get_active_order(self, last_price_response: Response):
+        """
+        Get currently active order
+        """
 
         if last_price_response.status_code != 200:
             return None
@@ -62,8 +66,10 @@ class ExitService:
         return None
 
     def fetch_instrument(self, instrument_key):
+        """
+        Fetches data for a particular instrument
+        """
 
-        self.instruments_collection = database_client.get_collection("instruments")
         instrument: Instruments = Instruments(**self.instruments_collection.find_one({"instrument_key": instrument_key}))
         return instrument
 
