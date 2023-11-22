@@ -98,3 +98,58 @@ class TradebookScrapper:
         print(f"Ignored orders: {len(data_list) - inserted_count}")
 
         return "Successful", 200
+    
+
+    def fill_tradebook_from_upstox_csv(self):
+        """
+        Function that helps to fill the tradebook from upstox csv export
+        """
+        tradebook_df = pd.read_csv("tradebook_upstox_1.csv")
+        data_list = []
+        for index, row in tradebook_df.iterrows(): # pylint: disable=unused-variable
+            
+            order_time = datetime.strptime(row.get("Date") + " " + row.get("Trade Time"), "%d-%m-%Y %H:%M:%S")
+
+            option_type = "CE"
+            if row.get("Instrument Type") == "European Put":
+                option_type = "PE"
+            order_instrument = self.instruments_collection.find_one({
+                "strike": row.get("Strike Price"),
+                "expiry": (datetime.strptime(row.get("Expiry"), "%d-%m-%Y")).strftime("%Y-%m-%d"),
+                "option_type": option_type
+            })
+            if order_instrument is None:
+                print("Skipping this order as no data found in instruments collection", row)
+                continue
+
+            order_instrument: Instruments = Instruments(**order_instrument)
+            
+            order_obj: Order = Order(
+                trading_symbol=order_instrument.trading_symbol,
+                trade_date=order_time.strftime("%Y-%m-%d"),
+                trade_type=row.get("Side").lower(),
+                quantity=row.get("Quantity"),
+                price=float(row.get("Price")[1:]),
+                trade_id=row.get("Trade Num"),
+                order_id=row.get("Trade Num"),
+                order_execution_time=order_time,
+                expiry_date=order_instrument.expiry,
+                instrument_token=order_instrument.instrument_key
+            )
+            data_list.append(order_obj.dict())
+
+        try:
+            db_res = self.orders_collection.insert_many(data_list, ordered=False)
+            inserted_count = len(db_res.inserted_ids)
+        except Exception as exc:
+            if isinstance(exc, BulkWriteError):
+                print(f"Skipping {len(exc.details.get('writeErrors'))} orders as these are duplicate")
+                inserted_count = exc.details.get('nInserted')
+
+        print("Successfuly inserted orders")
+        print(f"Fetched orders: {len(data_list)}")
+        print(f"Inserted orders: {inserted_count}")
+        print(f"Ignored orders: {len(data_list) - inserted_count}")
+
+        return "Successful", 200
+         
