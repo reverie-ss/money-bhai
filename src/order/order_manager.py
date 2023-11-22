@@ -2,6 +2,7 @@
 Executes order
 """
 from src.models.data_model_candle import Instruments
+from src.scrapper.tradebook import TradebookScrapper
 from src.utilities.enums import HTTP_Method, UpstoxEndpoint
 from src.utilities.script import execute_api
 
@@ -10,7 +11,7 @@ class ManageOrder:
     has functions to execute a trade
     """
 
-    def __init__(self, instrument: Instruments, quantity: int) -> None:
+    def __init__(self, instrument: Instruments = None, quantity: int = None) -> None:
         self.instrument = instrument
         self.quantity = quantity
 
@@ -19,7 +20,7 @@ class ManageOrder:
         Funciton is used to entry or exit orders
         """
         body = {
-            "quantity": self.instrument.lot_size * self.quantity,
+            "quantity": self.instrument.lot_size,
             "product": "I",
             "validity": "DAY",
             "price": 0,
@@ -60,3 +61,19 @@ class ManageOrder:
         return self.place_order(
             transaction_type="SELL"
         )
+    
+    def fetch_current_day_orders(self):
+        """
+        Fetches all orders for the current day.
+        """
+
+        response = execute_api(
+            method=HTTP_Method.GET,
+            endpoint=UpstoxEndpoint.FETCH_ORDERS,
+            is_authorization_required=True
+        )
+        if response.status_code == 200:
+            TradebookScrapper().fill_tradebook_from_upstox(response.json().get('data'))
+        else:
+            print(response.text)
+        return response

@@ -4,10 +4,11 @@ TODO: Move the routes to it's respective modules
 """
 import json
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from src.auth.authorization import UpstoxAuthorization
 from src.order.entry import EntryService
+from src.order.order_manager import ManageOrder
 from src.scrapper.candles import CandleScrapper, SyncInstrumentCandles
 from src.order.exit import ExitService
 from src.scrapper.tradebook import TradebookScrapper
@@ -59,7 +60,7 @@ def scrap_candles(instrument_key: str):
     Route used to scrap all the instruments and store in database
     """
     response = CandleScrapper(instrument_key=instrument_key).fetch_missing_historical_data()
-    return response
+    return JSONResponse(content=json.loads(response.text), status_code=response.status_code)
 
 @app.get("/trade/exit/")
 def trade_exit():
@@ -78,7 +79,15 @@ def trade_enter(trade_entry: TradeEntry):
     Route used to scrap all the instruments and store in database
     """
     response = EntryService(trade_entry=trade_entry).execute()
-    return response
+    return JSONResponse(content=json.loads(response.text), status_code=response.status_code)
+
+@app.get("/order/sync-history")
+def fetch_order_history():
+    """
+    Route used to scrap all the orders for the day and store in database
+    """
+    response = ManageOrder().fetch_current_day_orders()
+    return JSONResponse(content=json.loads(response.text), status_code=response.status_code)
 
 @app.get("/authorize/upstox")
 def authorize(code: str):
