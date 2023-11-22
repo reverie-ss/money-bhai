@@ -48,3 +48,4 @@ class Order(BaseModel):
     order_id: int
     order_execution_time: datetime
     expiry_date: str
+    instrument_token: str

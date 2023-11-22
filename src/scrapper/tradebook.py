@@ -5,8 +5,9 @@ If Nifty50 is at 19250, pull 8 premiums which are multiple of 100 (4 from top an
 """
 import pandas as pd
 from pymongo.errors import BulkWriteError
+from datetime import datetime
 
-from src.models.data_model_candle import Order
+from src.models.data_model_candle import Instruments, Order
 from src.utilities.singleton import database_client
 
 class TradebookScrapper:
@@ -15,6 +16,7 @@ class TradebookScrapper:
     """
     def __init__(self) -> None:
         self.orders_collection = database_client.get_collection("orders")
+        self.instruments_collection = database_client.get_collection("instruments")
         
     
     def fill_tradebook_from_zerodha(self):
@@ -52,3 +54,47 @@ class TradebookScrapper:
 
         return "Successful", 200
          
+
+    
+    def fill_tradebook_from_upstox(self, order_list: list):
+        """
+        Function that helps to fill the tradebook from upstox API
+        """
+        
+        data_list = []
+        for index, order in enumerate(order_list): # pylint: disable=unused-variable
+            
+            if order.get("status") != "complete":
+                continue
+
+            order_time = datetime.strptime(order.get("order_timestamp"), "%Y-%m-%d %H:%M:%S")
+            order_instrument: Instruments = Instruments(**self.instruments_collection.find_one({"instrument_key": order.get("instrument_token")}))
+
+            order_obj: Order = Order(
+                trading_symbol=order.get("trading_symbol"),
+                trade_date=order_time.strftime("%Y-%m-%d"),
+                trade_type=order.get("transaction_type").lower(),
+                quantity=order.get("quantity"),
+                price=order.get("average_price"),
+                trade_id=order.get("exchange_order_id"),
+                order_id=order.get("order_id"),
+                order_execution_time=order_time,
+                expiry_date=order_instrument.expiry,
+                instrument_token=order.get("instrument_token")
+            )
+            data_list.append(order_obj.dict())
+
+        try:
+            db_res = self.orders_collection.insert_many(data_list, ordered=False)
+            inserted_count = len(db_res.inserted_ids)
+        except Exception as exc:
+            if isinstance(exc, BulkWriteError):
+                print(f"Skipping {len(exc.details.get('writeErrors'))} orders as these are duplicate")
+                inserted_count = exc.details.get('nInserted')
+
+        print("Successfuly inserted orders")
+        print(f"Fetched orders: {len(data_list)}")
+        print(f"Inserted orders: {inserted_count}")
+        print(f"Ignored orders: {len(data_list) - inserted_count}")
+
+        return "Successful", 200
