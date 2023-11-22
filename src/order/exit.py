@@ -39,17 +39,6 @@ class ExitService:
         print(response)
         return response
 
-    def fetch_current_day_orders(self):
-        """
-        Fetches all orders for the current day.
-        """
-
-        response = execute_api(
-            method=HTTP_Method.GET,
-            endpoint=UpstoxEndpoint.FETCH_ORDERS,
-        )
-        print(response.text)
-
     def get_active_order(self, last_price_response: Response):
         """
         Get currently active order
